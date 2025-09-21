@@ -1,0 +1,359 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build:model",
+      "type": "shell",
+      "command": "openscad",
+      "args": [
+        "-o",
+        "${workspaceFolder}/models/bow_tie_reference.stl",
+        "${workspaceFolder}/models/bow_tie_parametric.scad"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Export STL from OpenSCAD parametric model",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "slice:prusa",
+      "type": "shell",
+      "command": "prusa-slicer",
+      "args": [
+        "--load",
+        "${workspaceFolder}/slicer/profiles/ender3pro_pla_0.2mm.ini",
+        "--export-gcode",
+        "${workspaceFolder}/models/bow_tie_reference.stl",
+        "-o",
+        "${workspaceFolder}/gcode/production/bow_tie_pla_0.2mm.gcode"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Slice bow tie model using PrusaSlicer profile",
+      "dependsOn": "build:model",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "slice:cura",
+      "type": "shell",
+      "command": "CuraEngine",
+      "args": [
+        "slice",
+        "-j",
+        "${workspaceFolder}/slicer/profiles/cura_ender3pro_pla_0.2mm.json",
+        "-o",
+        "${workspaceFolder}/gcode/production/bow_tie_cura.gcode",
+        "-l",
+        "${workspaceFolder}/models/bow_tie_reference.stl"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Slice bow tie model using CuraEngine profile",
+      "dependsOn": "build:model",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "post:color-swap-m600",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/slicer/postprocess/insert_color_swap.py",
+        "--input",
+        "${workspaceFolder}/gcode/production/bow_tie_pla_0.2mm.gcode",
+        "--by",
+        "layer",
+        "--value",
+        "5",
+        "--mode",
+        "m600",
+        "--output",
+        "${workspaceFolder}/gcode/production/bow_tie_pla_0.2mm_swap_L5.gcode"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Add M600 color swap at layer 5",
+      "dependsOn": "slice:prusa",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "post:color-swap-pause",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/slicer/postprocess/insert_color_swap.py",
+        "--input",
+        "${workspaceFolder}/gcode/production/bow_tie_pla_0.2mm.gcode",
+        "--by",
+        "height",
+        "--value",
+        "1.0",
+        "--mode",
+        "pause",
+        "--output",
+        "${workspaceFolder}/gcode/production/bow_tie_pla_0.2mm_swap_H1.0mm.gcode"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Add manual pause color swap at 1.0mm height",
+      "dependsOn": "slice:prusa",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "build:complete-pipeline",
+      "dependsOrder": "sequence",
+      "dependsOn": ["build:model", "slice:prusa", "post:color-swap-m600"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "detail": "Complete build pipeline: model → slice → color swap"
+    },
+    {
+      "label": "package:release",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "$date = Get-Date -Format 'yyyy-MM-dd'; New-Item -ItemType Directory -Path '${workspaceFolder}/release' -Force; Compress-Archive -Path '${workspaceFolder}/docs', '${workspaceFolder}/manifests', '${workspaceFolder}/gcode/production' -DestinationPath \"${workspaceFolder}/release/3d_printing_workspace_$date.zip\" -Force; Write-Host \"Release package created: release/3d_printing_workspace_$date.zip\""
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Create release package with docs, manifests, and production G-code",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "calibration:all",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "echo Calibration files ready in calibration/ folder && echo Run in this order: && echo 1. first_layer_test.gcode && echo 2. temp_tower_pla_195-220C.gcode && echo 3. retraction_tower.gcode && echo 4. flow_cube_100pct.gcode && echo 5. xyz_calibration_cube.gcode"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Show calibration sequence",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "validate:profiles",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-c",
+        "import os; profiles = ['slicer/profiles/ender3pro_pla_0.2mm.ini', 'slicer/profiles/cura_ender3pro_pla_0.2mm.json']; missing = [p for p in profiles if not os.path.exists(p)]; print('All profiles valid' if not missing else f'Missing profiles: {missing}')"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Validate slicer profile files exist",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "generate:manifest",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-c",
+        "import yaml, os, hashlib; gcode_file = 'gcode/production/bow_tie_pla_0.2mm_swap_L5.gcode'; manifest = {'model': 'bow_tie_parametric.scad', 'slicer': 'PrusaSlicer', 'profile': 'ender3pro_pla_0.2mm.ini', 'temperatures': {'nozzle': 205, 'bed': 60}, 'filament': 'PLA+', 'layer_height': 0.2, 'color_swap': {'layer': 5, 'mode': 'M600'}, 'file_hash': hashlib.md5(open(gcode_file, 'rb').read()).hexdigest() if os.path.exists(gcode_file) else 'N/A'}; os.makedirs('manifests', exist_ok=True); yaml.dump(manifest, open('manifests/bow_tie.slice.yml', 'w'), default_flow_style=False); print('Manifest generated: manifests/bow_tie.slice.yml')"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Generate YAML manifest for current build",
+      "dependsOn": "post:color-swap-m600",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "clean:gcode",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-Command",
+        "Remove-Item -Path '${workspaceFolder}/gcode/production/*' -Force -ErrorAction SilentlyContinue; Write-Host 'Production G-code files cleared'"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Clean production G-code directory",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "workspace:setup-tools",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "echo Required tools for this workspace: && echo. && echo 1. OpenSCAD - https://openscad.org/downloads.html && echo 2. PrusaSlicer - https://www.prusa3d.com/page/prusaslicer_424/ && echo 3. Python 3.12+ - https://www.python.org/downloads/ && echo 4. PyYAML - pip install pyyaml && echo. && echo Add these to your PATH environment variable && echo See README.md for detailed setup instructions"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true
+      },
+      "problemMatcher": [],
+      "detail": "Show required tools and setup instructions"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "colorSwapLayer",
+      "description": "Layer number for color swap",
+      "default": "5",
+      "type": "promptString"
+    },
+    {
+      "id": "colorSwapHeight",
+      "description": "Height (mm) for color swap",
+      "default": "1.0",
+      "type": "promptString"
+    },
+    {
+      "id": "printTemperature",
+      "description": "Nozzle temperature (°C)",
+      "default": "205",
+      "type": "promptString"
+    }
+  ]
+}

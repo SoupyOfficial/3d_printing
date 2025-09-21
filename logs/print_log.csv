@@ -1,0 +1,2 @@
+timestamp,model,gcode_path,filament_brand,filament_type,nozzle_temp,bed_temp,layer_height,color_swap,outcome,print_duration,issues,notes
+2024-09-21T10:00:00,bow_tie_parametric,gcode/production/bow_tie_pla_0.2mm_swap_L5.gcode,Generic,PLA+,205,60,0.2,M600_L5,success,42min,"none","Initial test print - good adhesion and clean color swap"

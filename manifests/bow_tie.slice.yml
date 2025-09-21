@@ -1,0 +1,159 @@
+# Bow Tie Slice Manifest
+# Generated automatically during build process
+# Update this file when changing settings or materials
+
+project_name: "Conservative Bow Tie - Two Color"
+created_date: "2024-09-21"
+version: "1.0"
+
+# Model Information
+model:
+  source_file: "models/bow_tie_parametric.scad"
+  exported_stl: "models/bow_tie_reference.stl"
+  parameters:
+    bow_width_mm: 110
+    bow_height_mm: 55
+    bow_thickness_mm: 3.0
+    center_knot_width_mm: 20
+    strap_slot_width_mm: 22
+    strap_slot_height_mm: 2.5
+  dimensions:
+    x: 110.0 # mm
+    y: 55.0 # mm
+    z: 3.0 # mm
+  volume: 15.5 # cm³ (approximate)
+
+# Slicer Configuration
+slicer:
+  engine: "PrusaSlicer"
+  version: "2.6.0" # Update with actual version
+  profile: "slicer/profiles/ender3pro_pla_0.2mm.ini"
+
+# Print Settings
+print_settings:
+  layer_height: 0.2 # mm
+  first_layer_height: 0.2 # mm
+  perimeters: 3
+  top_layers: 4
+  bottom_layers: 4
+  infill_density: 15 # %
+  infill_pattern: "gyroid"
+
+# Speed Settings (mm/s)
+speeds:
+  perimeter: 50
+  external_perimeter: 50
+  infill: 80
+  solid_infill: 80
+  top_solid_infill: 50
+  first_layer: 15 # 30% of perimeter speed
+
+# Temperature Settings (°C)
+temperatures:
+  nozzle: 205
+  nozzle_first_layer: 205
+  bed: 60
+  bed_first_layer: 60
+
+# Material Information
+filament:
+  type: "PLA+"
+  brand: "Generic" # Update with actual brand
+  diameter: 1.75 # mm
+  color_1: "Primary Color" # Update with actual colors
+  color_2: "Secondary Color"
+  estimated_usage: 12.5 # grams
+
+# Printer Configuration
+printer:
+  model: "Creality Ender 3 Pro"
+  nozzle_diameter: 0.4 # mm
+  build_volume: [220, 220, 250] # mm [x, y, z]
+  extruder_type: "Bowden"
+
+# Retraction Settings
+retraction:
+  distance: 0.8 # mm (Bowden optimized)
+  speed: 35 # mm/s
+  lift_z: 0.0 # mm
+
+# Color Swap Configuration
+color_swap:
+  enabled: true
+  method: "M600" # Options: M600, pause
+  layer: 5 # Layer number for color change
+  height: 1.0 # mm - approximate height of color change
+  estimated_pause_time: 3 # minutes
+
+# Output Files
+output_files:
+  primary_gcode: "gcode/production/bow_tie_pla_0.2mm.gcode"
+  color_swap_gcode: "gcode/production/bow_tie_pla_0.2mm_swap_L5.gcode"
+
+# File Integrity
+checksums:
+  stl_md5: "" # To be filled by build process
+  gcode_md5: "" # To be filled by build process
+
+# Estimated Print Time
+print_time:
+  estimated: "45 minutes" # Based on slicer calculation
+  first_color: "15 minutes" # Up to layer 5
+  second_color: "30 minutes" # After color swap
+
+# Quality Settings
+quality:
+  supports: false
+  brim_width: 0 # mm
+  skirt_loops: 1
+  cooling:
+    fan_speed: 100 # % after layer 3
+    min_layer_time: 10 # seconds
+
+# Advanced Settings
+advanced:
+  linear_advance: false # Enable if firmware supports
+  pressure_advance: 0.0 # For Klipper/RepRap firmware
+  acceleration:
+    perimeter: 500 # mm/s²
+    infill: 500 # mm/s²
+
+# Build Process
+build_info:
+  built_by: "VS Code Tasks"
+  build_date: "" # To be filled automatically
+  git_commit: "" # To be filled if in git repo
+
+# Notes and Comments
+notes: |
+  Conservative bow tie design optimized for reliable two-color printing.
+  Color swap occurs at approximately 33% of total height to create
+  natural color division at the knot area.
+
+  Tested settings for PLA+ on stock Ender 3 Pro.
+  Adjust temperatures based on specific filament brand.
+
+  First layer adhesion critical - ensure proper bed leveling.
+
+# Calibration References
+calibration_files:
+  - "calibration/first_layer_test.gcode"
+  - "calibration/temp_tower_pla_195-220C.gcode"
+  - "calibration/retraction_tower.gcode"
+  - "calibration/flow_cube_100pct.gcode"
+  - "calibration/xyz_calibration_cube.gcode"
+
+# Troubleshooting Quick Reference
+troubleshooting:
+  poor_adhesion:
+    - "Increase bed temperature to 65°C"
+    - "Clean bed with IPA"
+    - "Lower Z-offset by 0.05mm"
+  stringing:
+    - "Increase retraction to 1.0mm"
+    - "Decrease temperature by 5°C"
+    - "Increase retraction speed to 45mm/s"
+  color_bleeding:
+    - "Increase purge amount during swap"
+    - "Ensure complete filament change"
+    - "Consider nozzle cleaning between colors"
