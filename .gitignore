@@ -59,3 +59,4 @@ wheels/
 # Printer-specific temp files
 *.gcode.bak
 *.ini.bak
+.env
