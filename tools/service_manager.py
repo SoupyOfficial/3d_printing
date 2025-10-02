@@ -1,9 +1,10 @@
 # service_manager.py -- Simple service management script
-# Run: python service_manager.py [install|start|stop|restart|status|uninstall]
+# Run: python service_manager.py [install|start|stop|restart|status|uninstall|send-sms]
 
 import sys
 import subprocess
 import time
+import os
 from pathlib import Path
 
 def run_command(cmd, description):
@@ -64,7 +65,7 @@ def main():
         print(f"✗ Service script not found: {service_script}")
         return 1
     
-    if action in ["install", "start", "stop", "restart"]:
+    if action in ["install", "start", "stop", "restart", "uninstall"]:
         if not check_admin():
             print("✗ Administrator privileges required for this action")
             print("Run PowerShell as Administrator or use 'Run as administrator'")
@@ -139,9 +140,97 @@ def main():
         else:
             print(f"✗ URL file not found: {url_file}")
     
+    elif action == "send-sms":
+        # Manual SMS sending
+        print("📱 Manual SMS Send")
+        print("=" * 30)
+        
+        # Check if we have a current URL
+        logs_dir = script_dir.parent / "logs"
+        url_file = logs_dir / "cloudflared_url.txt"
+        
+        if not url_file.exists():
+            print("❌ No tunnel URL found. Start the service first.")
+            return 1
+            
+        try:
+            url_content = url_file.read_text().strip()
+            current_url = url_content.split('\n')[0] if url_content else None
+            
+            if not current_url:
+                print("❌ URL file is empty. Start the service first.")
+                return 1
+                
+            print(f"🔗 Current URL: {current_url}")
+            
+            # Use the send_tunnel_sms script
+            sms_script = script_dir / "send_tunnel_sms.py"
+            if not sms_script.exists():
+                print(f"❌ SMS script not found: {sms_script}")
+                return 1
+                
+            print("📤 Sending SMS...")
+            
+            # Set environment to handle Unicode properly
+            env = os.environ.copy()
+            env['PYTHONIOENCODING'] = 'utf-8'
+            
+            result = subprocess.run([sys.executable, str(sms_script)], 
+                                  capture_output=True, text=True, env=env, encoding='utf-8', errors='replace')
+            
+            if result.returncode == 0:
+                print("✅ SMS sent successfully!")
+                print("📱 SMS notification has been sent to your phone.")
+            else:
+                print("❌ Failed to send SMS")
+                # Try to extract useful error information without emojis
+                if result.stderr.strip():
+                    error_lines = result.stderr.strip().split('\n')
+                    for line in error_lines:
+                        if 'Error:' in line or 'Exception:' in line:
+                            clean_line = line.encode('ascii', errors='ignore').decode('ascii')
+                            print(f"Error: {clean_line}")
+                return 1
+                
+        except Exception as e:
+            print(f"❌ Error reading URL file: {e}")
+            return 1
+    
+    elif action == "force-status":
+        # Force immediate status report
+        print("📊 Force Status Report")
+        print("=" * 30)
+        
+        health_script = script_dir / "health_monitor.py"
+        if not health_script.exists():
+            print(f"❌ Health monitor script not found: {health_script}")
+            return 1
+            
+        print("📤 Sending status report...")
+        
+        # Set environment to handle Unicode properly  
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
+        
+        result = subprocess.run([sys.executable, str(health_script), "--status-report"], 
+                              capture_output=True, text=True, env=env, encoding='utf-8', errors='replace')
+        
+        if result.returncode == 0:
+            print("✅ Status report sent successfully!")
+            print("📊 Status report has been sent to your phone.")
+        else:
+            print("❌ Failed to send status report")
+            if result.stderr.strip():
+                error_lines = result.stderr.strip().split('\n')
+                for line in error_lines:
+                    if 'Error:' in line or 'Exception:' in line:
+                        clean_line = line.encode('ascii', errors='ignore').decode('ascii')
+                        print(f"Error: {clean_line}")
+            return 1
+    
     else:
         print(f"Unknown action: {action}")
-        print("Valid actions: install, start, stop, restart, status, uninstall")
+        print("Valid actions: install, start, stop, restart, status, uninstall, send-sms, force-status")
         return 1
     
     return 0

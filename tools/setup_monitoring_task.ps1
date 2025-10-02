@@ -28,7 +28,7 @@ if (-not (Test-Administrator)) {
 }
 
 function Install-MonitoringTask {
-    Write-Host "`nInstalling health monitoring task..." -ForegroundColor Yellow
+    Write-Host "`nInstalling health monitoring tasks..." -ForegroundColor Yellow
     
     # Check if Python is available
     try {
@@ -47,82 +47,95 @@ function Install-MonitoringTask {
     }
     
     try {
-        # Create the scheduled task
-        $action = New-ScheduledTaskAction -Execute "python" -Argument "`"$HealthScript`"" -WorkingDirectory $ProjectRoot
-        
-        # Create triggers for:
-        # 1. Daily at 8:00 AM for status report
-        # 2. Every 30 minutes for health checks
-        $dailyTrigger = New-ScheduledTaskTrigger -Daily -At "08:00"
-        $healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 30) -RepetitionDuration (New-TimeSpan -Days 365)
-        
-        # Task settings
+        # Task settings (shared)
         $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -RunOnlyIfNetworkAvailable
-        
-        # Principal (run as SYSTEM for reliability)
         $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
         
-        # Register the task
-        Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger @($dailyTrigger, $healthTrigger) -Settings $settings -Principal $principal -Description "Monitors Fluidd tunnel health and sends daily status reports"
+        # 1. Status Reports Task - 4 times daily (8 AM, 12 PM, 4 PM, 8 PM)
+        $statusAction = New-ScheduledTaskAction -Execute "python" -Argument "`"$HealthScript`" --status-report" -WorkingDirectory $ProjectRoot
+        $statusTrigger1 = New-ScheduledTaskTrigger -Daily -At "08:00"
+        $statusTrigger2 = New-ScheduledTaskTrigger -Daily -At "12:00"
+        $statusTrigger3 = New-ScheduledTaskTrigger -Daily -At "16:00"
+        $statusTrigger4 = New-ScheduledTaskTrigger -Daily -At "20:00"
+        $statusTriggers = @($statusTrigger1, $statusTrigger2, $statusTrigger3, $statusTrigger4)
         
-        Write-Host "✅ Health monitoring task installed successfully" -ForegroundColor Green
-        Write-Host "Task will run:" -ForegroundColor Cyan
-        Write-Host "  - Daily at 8:00 AM for status reports" -ForegroundColor White
-        Write-Host "  - Every 30 minutes for health checks" -ForegroundColor White
+        Register-ScheduledTask -TaskName "FluiddStatusReports" -Action $statusAction -Trigger $statusTriggers -Settings $settings -Principal $principal -Description "Sends Fluidd tunnel status reports 4 times daily (8AM, 12PM, 4PM, 8PM)"
+        
+        # 2. Health Monitoring Task - Every 2 hours for basic health checks (no SMS)
+        $healthAction = New-ScheduledTaskAction -Execute "python" -Argument "`"$HealthScript`" --health-check" -WorkingDirectory $ProjectRoot
+        $healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Hours 2) -RepetitionDuration (New-TimeSpan -Days 365)
+        
+        Register-ScheduledTask -TaskName "FluiddHealthCheck" -Action $healthAction -Trigger $healthTrigger -Settings $settings -Principal $principal -Description "Performs Fluidd tunnel health checks every 2 hours (silent monitoring)"
+        
+        Write-Host "✅ Health monitoring tasks installed successfully" -ForegroundColor Green
+        Write-Host "Tasks configured:" -ForegroundColor Cyan
+        Write-Host "  - Status Reports: 8 AM, 12 PM, 4 PM, 8 PM (with SMS)" -ForegroundColor White
+        Write-Host "  - Health Checks: Every 2 hours (silent monitoring)" -ForegroundColor White
         
         return $true
     }
     catch {
-        Write-Error "Error installing task: $($_.Exception.Message)"
+        Write-Error "Error installing tasks: $($_.Exception.Message)"
         return $false
     }
 }
 
 function Uninstall-MonitoringTask {
-    Write-Host "`nUninstalling health monitoring task..." -ForegroundColor Yellow
+    Write-Host "`nUninstalling health monitoring tasks..." -ForegroundColor Yellow
     
     try {
-        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-        Write-Host "✅ Health monitoring task uninstalled successfully" -ForegroundColor Green
+        # Remove both tasks
+        $tasks = @("FluiddStatusReports", "FluiddHealthCheck", $TaskName)
+        foreach ($task in $tasks) {
+            try {
+                Unregister-ScheduledTask -TaskName $task -Confirm:$false -ErrorAction SilentlyContinue
+                Write-Host "Removed task: $task" -ForegroundColor Green
+            }
+            catch {
+                # Ignore if task doesn't exist
+            }
+        }
+        Write-Host "✅ Health monitoring tasks uninstalled successfully" -ForegroundColor Green
         return $true
     }
     catch {
-        Write-Error "Error uninstalling task: $($_.Exception.Message)"
+        Write-Error "Error uninstalling tasks: $($_.Exception.Message)"
         return $false
     }
 }
 
 function Get-TaskStatus {
-    Write-Host "`nHealth Monitoring Task Status:" -ForegroundColor Cyan
+    Write-Host "`nHealth Monitoring Tasks Status:" -ForegroundColor Cyan
     
-    try {
-        $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-        if ($task) {
-            Write-Host "Task Name: $($task.TaskName)"
-            Write-Host "State: $($task.State)"
-            Write-Host "Description: $($task.Description)"
-            
-            # Get last run info
-            $taskInfo = Get-ScheduledTaskInfo -TaskName $TaskName
-            Write-Host "Last Run Time: $($taskInfo.LastRunTime)"
-            Write-Host "Last Result: $($taskInfo.LastTaskResult)"
-            Write-Host "Next Run Time: $($taskInfo.NextRunTime)"
-            
-            # Show triggers
-            Write-Host "`nTriggers:"
-            foreach ($trigger in $task.Triggers) {
-                Write-Host "  - $($trigger.TriggerType): $($trigger.StartBoundary)"
-                if ($trigger.Repetition.Interval) {
-                    Write-Host "    Repeats every: $($trigger.Repetition.Interval)"
+    $taskNames = @("FluiddStatusReports", "FluiddHealthCheck", $TaskName)
+    
+    foreach ($taskName in $taskNames) {
+        try {
+            $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+            if ($task) {
+                Write-Host "`n--- $taskName ---" -ForegroundColor Yellow
+                Write-Host "State: $($task.State)"
+                Write-Host "Description: $($task.Description)"
+                
+                # Get last run info
+                $taskInfo = Get-ScheduledTaskInfo -TaskName $taskName
+                Write-Host "Last Run Time: $($taskInfo.LastRunTime)"
+                Write-Host "Last Result: $($taskInfo.LastTaskResult)"
+                Write-Host "Next Run Time: $($taskInfo.NextRunTime)"
+                
+                # Show triggers
+                Write-Host "Triggers:"
+                foreach ($trigger in $task.Triggers) {
+                    Write-Host "  - $($trigger.TriggerType): $($trigger.StartBoundary)"
+                    if ($trigger.Repetition.Interval) {
+                        Write-Host "    Repeats every: $($trigger.Repetition.Interval)"
+                    }
                 }
             }
-            
-        } else {
-            Write-Host "Task not found" -ForegroundColor Red
         }
-    }
-    catch {
-        Write-Error "Error getting task status: $($_.Exception.Message)"
+        catch {
+            # Ignore missing tasks
+        }
     }
 }
 
@@ -132,8 +145,8 @@ switch ($Action.ToLower()) {
         if (Install-MonitoringTask) {
             Write-Host "`n🎉 Health monitoring setup completed!" -ForegroundColor Green
             Write-Host "The system will now automatically:" -ForegroundColor Cyan
-            Write-Host "  - Send daily status reports at 8 AM" -ForegroundColor White
-            Write-Host "  - Perform health checks every 30 minutes" -ForegroundColor White
+            Write-Host "  - Send status reports at 8 AM, 12 PM, 4 PM, and 8 PM" -ForegroundColor White
+            Write-Host "  - Perform silent health checks every 2 hours" -ForegroundColor White
             Write-Host "  - Alert you if the tunnel becomes unreachable" -ForegroundColor White
         }
     }

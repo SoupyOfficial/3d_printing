@@ -82,14 +82,21 @@ class FluiddTunnelService(win32serviceutil.ServiceFramework):
         return env
     
     def _log(self, message):
-        """Write to both service log and VS Code accessible log"""
+        """Write to service log, console, and Windows event log"""
         timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-        log_line = f"[{timestamp}] {message}\n"
+        log_line = f"[{timestamp}] {message}"
         
-        # Write to service log
+        # Write to console (stdout) for real-time viewing
+        try:
+            print(log_line)
+            sys.stdout.flush()
+        except Exception:
+            pass
+        
+        # Write to service log file
         try:
             with open(self.log_file, "a", encoding="utf-8") as f:
-                f.write(log_line)
+                f.write(log_line + "\n")
         except Exception:
             pass
             
@@ -133,34 +140,70 @@ class FluiddTunnelService(win32serviceutil.ServiceFramework):
         return stopped_count
     
     def _send_sms(self, url):
-        """Send SMS notification with tunnel URL - with retry logic"""
+        """Send SMS notification with tunnel URL - with verbose logging and email backup"""
         if "GOOGLE_APP_PASS" not in self.env:
             self._log("SMS not configured - GOOGLE_APP_PASS not set")
             return False
             
         gmail_user = "soupsterx@gmail.com"
         sms_addr = "3216981359@vtext.com"
+        email_addr = "soupsterx@gmail.com"
         max_retries = 3
         retry_delay = 2  # seconds
         
+        # Create compact message
+        body = f"Fluidd: {url} ({time.strftime('%H:%M')})"
+        subject = "Fluidd URL"
+        
+        self._log(f"Preparing SMS notification:")
+        self._log(f"  URL: {url}")
+        self._log(f"  Message: {body}")
+        self._log(f"  Length: {len(body)} characters")
+        self._log(f"  SMS target: {sms_addr}")
+        self._log(f"  Email backup: {email_addr}")
+        
+        sms_success = False
+        email_success = False
+        
         for attempt in range(1, max_retries + 1):
             try:
-                self._log(f"SMS attempt {attempt}/{max_retries} to {sms_addr}")
+                self._log(f"SMS attempt {attempt}/{max_retries}")
+                self._log("Connecting to Gmail SMTP...")
                 
-                msg = EmailMessage()
-                msg.set_content(f"Fluidd tunnel is ready:\n{url}\n\nGenerated at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-                msg["Subject"] = "Fluidd Tunnel URL"
-                msg["From"] = gmail_user
-                msg["To"] = sms_addr
-
                 with smtplib.SMTP("smtp.gmail.com", 587) as s:
                     s.ehlo()
                     s.starttls()
+                    self._log("SMTP TLS connection established")
+                    
                     s.login(gmail_user, self.env["GOOGLE_APP_PASS"])
-                    s.send_message(msg)
-
-                self._log(f"SMS sent successfully to {sms_addr} on attempt {attempt}")
-                return True
+                    self._log("SMTP authentication successful")
+                    
+                    # Send SMS
+                    self._log(f"Sending SMS to {sms_addr}...")
+                    sms_msg = EmailMessage()
+                    sms_msg.set_content(body)
+                    sms_msg["Subject"] = subject
+                    sms_msg["From"] = gmail_user
+                    sms_msg["To"] = sms_addr
+                    
+                    s.send_message(sms_msg)
+                    sms_success = True
+                    self._log(f"SMS sent successfully to {sms_addr} on attempt {attempt}")
+                    
+                    # Send backup email
+                    self._log(f"Sending backup email to {email_addr}...")
+                    email_msg = EmailMessage()
+                    email_body = f"Fluidd Tunnel Notification\n\nURL: {url}\nTime: {time.strftime('%Y-%m-%d %H:%M:%S')}\nMessage: {body}\n\nThis is a backup delivery."
+                    email_msg.set_content(email_body)
+                    email_msg["Subject"] = f"[Backup] {subject}"
+                    email_msg["From"] = gmail_user
+                    email_msg["To"] = email_addr
+                    
+                    s.send_message(email_msg)
+                    email_success = True
+                    self._log("Backup email sent successfully")
+                    
+                break  # Exit retry loop on success
                 
             except smtplib.SMTPAuthenticationError as e:
                 self._log(f"SMS authentication failed on attempt {attempt}: {e}")
@@ -169,7 +212,7 @@ class FluiddTunnelService(win32serviceutil.ServiceFramework):
                 break  # Don't retry auth errors
                 
             except Exception as e:
-                self._log(f"SMS attempt {attempt} failed: {e}")
+                self._log(f"SMS attempt {attempt} failed: {type(e).__name__}: {e}")
                 if attempt < max_retries:
                     self._log(f"Retrying SMS in {retry_delay} seconds...")
                     time.sleep(retry_delay)
@@ -177,7 +220,12 @@ class FluiddTunnelService(win32serviceutil.ServiceFramework):
                 else:
                     self._log("SMS failed after all retry attempts")
         
-        return False
+        # Log summary
+        self._log(f"Notification delivery summary:")
+        self._log(f"  SMS: {'Success' if sms_success else 'Failed'}")
+        self._log(f"  Email: {'Success' if email_success else 'Failed'}")
+        
+        return sms_success or email_success  # Success if either method worked
     
     def _save_status(self, status_data):
         """Save service status to JSON file"""

@@ -1,15 +1,43 @@
 #!/usr/bin/env python3
 # health_monitor.py -- Standalone health monitoring for Fluidd tunnel
-# Run: python health_monitor.py
+# Run: python health_monitor.py [--status-report | --health-check]
 
 import json
 import time
 import smtplib
 import urllib.request
 import urllib.error
+import sys
+import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
 from email.message import EmailMessage
+
+# Setup dual logging (console + file)
+script_dir = Path(__file__).resolve().parent
+project_root = script_dir.parent
+logs_dir = project_root / "logs"
+logs_dir.mkdir(exist_ok=True)
+health_log_file = logs_dir / "health_monitor.log"
+
+def dual_log(message, prefix="INFO"):
+    """Log to both console and file"""
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    log_line = f"[{timestamp}] {prefix}: {message}"
+    
+    # Console output
+    try:
+        print(log_line)
+        sys.stdout.flush()
+    except Exception:
+        pass
+    
+    # File output
+    try:
+        with open(health_log_file, "a", encoding="utf-8") as f:
+            f.write(log_line + "\n")
+    except Exception:
+        pass
 
 def load_env():
     """Load environment variables from .env file"""
@@ -99,32 +127,76 @@ def should_send_daily_report(last_report_str):
     return False
 
 def send_sms(subject, message):
-    """Send SMS message"""
+    """Send SMS message with verbose logging and email backup"""
     env = load_env()
     
     if "GOOGLE_APP_PASS" not in env:
-        print("❌ GOOGLE_APP_PASS not found in .env file")
+        dual_log("GOOGLE_APP_PASS not found in .env file", "ERROR")
         return False
     
     gmail_user = "soupsterx@gmail.com"
     sms_addr = "3216981359@vtext.com"
+    email_addr = "soupsterx@gmail.com"
+    
+    dual_log("Preparing notification...")
+    dual_log(f"Subject: {subject}")
+    dual_log(f"Message: {message}")
+    dual_log(f"Message length: {len(message)} characters")
+    dual_log(f"SMS target: {sms_addr}")
+    dual_log(f"Email target: {email_addr}")
+    
+    sms_success = False
+    email_success = False
     
     try:
-        msg = EmailMessage()
-        msg.set_content(message)
-        msg["Subject"] = subject
-        msg["From"] = gmail_user
-        msg["To"] = sms_addr
-
+        dual_log("Connecting to Gmail SMTP...")
+        
         with smtplib.SMTP("smtp.gmail.com", 587) as s:
+            dual_log("Starting TLS encryption...")
             s.ehlo()
             s.starttls()
+            
+            dual_log("Authenticating...")
             s.login(gmail_user, env["GOOGLE_APP_PASS"])
-            s.send_message(msg)
+            dual_log("SMTP authentication successful")
+            
+            # Send SMS
+            dual_log("Sending SMS...")
+            sms_msg = EmailMessage()
+            sms_msg.set_content(message)
+            sms_msg["Subject"] = subject
+            sms_msg["From"] = gmail_user
+            sms_msg["To"] = sms_addr
+            
+            s.send_message(sms_msg)
+            sms_success = True
+            dual_log("SMS sent successfully!")
+            
+            # Send backup email
+            dual_log("Sending backup email...")
+            email_msg = EmailMessage()
+            email_body = f"Health Monitor Notification\n\nSubject: {subject}\nMessage: {message}\nTime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\nThis is a backup delivery."
+            email_msg.set_content(email_body)
+            email_msg["Subject"] = f"[Health Monitor Backup] {subject}"
+            email_msg["From"] = gmail_user
+            email_msg["To"] = email_addr
+            
+            s.send_message(email_msg)
+            email_success = True
+            dual_log("Backup email sent successfully!")
         
-        return True
+        dual_log("Delivery Summary:")
+        dual_log(f"SMS: {'Success' if sms_success else 'Failed'}")
+        dual_log(f"Email: {'Success' if email_success else 'Failed'}")
+        
+        return sms_success or email_success
+        
+    except smtplib.SMTPAuthenticationError as e:
+        dual_log(f"SMTP Authentication failed: {e}", "ERROR")
+        dual_log("Check GOOGLE_APP_PASS in .env file", "ERROR")
+        return False
     except Exception as e:
-        print(f"SMS failed: {e}")
+        dual_log(f"Notification failed: {type(e).__name__}: {e}", "ERROR")
         return False
 
 def get_service_status():
@@ -158,45 +230,39 @@ def get_process_info():
 
 def send_daily_status_report():
     """Send comprehensive daily status report"""
-    print("📊 Generating daily status report...")
+    dual_log("Generating daily status report...")
     
     # Get current status
     current_url = get_current_url()
-    status = load_status()
-    
-    # Check health
-    url_healthy = check_url_health(current_url) if current_url else False
     service_running = get_service_status()
     process_info = get_process_info()
+    url_healthy = check_url_health(current_url) if current_url else False
     
     # Calculate uptime
+    status = load_status()
+    last_start = status.get('last_start')
     uptime_str = "Unknown"
-    if status.get("tunnel_start_time"):
+    if last_start:
         try:
-            start_time = datetime.fromisoformat(status["tunnel_start_time"])
+            start_time = datetime.fromisoformat(last_start)
             uptime = datetime.now() - start_time
-            uptime_str = str(uptime).split('.')[0]  # Remove microseconds
-        except ValueError:
-            pass
+            hours, remainder = divmod(uptime.total_seconds(), 3600)
+            minutes, _ = divmod(remainder, 60)
+            uptime_str = f"{int(hours)}:{int(minutes):02d}"
+        except Exception:
+            uptime_str = "Unknown"
     
-    # Build status message
     now = datetime.now()
-    status_msg = f"""🌅 Fluidd Daily Status Report
+    
+    # Create compact status message to avoid SMS truncation
+    health_icon = "OK" if (url_healthy and service_running) else "ISSUE"
+    url_short = current_url.replace("https://", "") if current_url else "None"
+    
+    status_msg = f"Fluidd Status {now.strftime('%H:%M')}: {health_icon} | URL: {url_short} | Uptime: {uptime_str}"
 
-🕐 Time: {now.strftime('%Y-%m-%d %H:%M:%S')}
-🔗 Current URL: {current_url or 'None'}
-🌐 URL Health: {'✅ Accessible' if url_healthy else '❌ Not accessible' if current_url else '❓ No URL'}
-⚙️ Service: {'✅ Running' if service_running else '❌ Not running'}
-🖥️ Process: {process_info.get('status', 'Unknown')}
-⏱️ Uptime: {uptime_str}
-🔄 Restarts: {status.get('restart_count', 0)}
-📊 Overall: {'✅ Healthy' if (url_healthy and service_running) else '⚠️ Issues detected'}
-
-Daily 8 AM status check complete."""
-
-    # Send SMS
-    if send_sms("Fluidd Daily Status", status_msg):
-        print("✅ Daily status report sent successfully")
+    # Send SMS with compact format
+    if send_sms("Fluidd Status", status_msg):
+        dual_log("Daily status report sent successfully")
         
         # Update status with report timestamp
         status["last_report"] = now.isoformat()
@@ -205,12 +271,12 @@ Daily 8 AM status check complete."""
         
         return True
     else:
-        print("❌ Failed to send daily status report")
+        dual_log("Failed to send daily status report", "ERROR")
         return False
 
 def perform_health_check():
-    """Perform immediate health check"""
-    print("🔍 Performing health check...")
+    """Perform immediate health check (silent - no SMS unless there's an issue)"""
+    print("🔍 Performing silent health check...")
     
     current_url = get_current_url()
     status = load_status()
@@ -229,9 +295,17 @@ def perform_health_check():
     else:
         print("❌ Tunnel is not accessible")
         
-        # Send alert if this is a new issue
-        alert_msg = f"⚠️ Fluidd tunnel health check failed at {datetime.now().strftime('%H:%M:%S')}.\n\nURL: {current_url}\n\nThe tunnel may be down or unreachable."
-        send_sms("Fluidd Health Alert", alert_msg)
+        # Only send alert if this is a new issue (hasn't been down for a while)
+        last_check = status.get("last_health_check")
+        url_was_healthy = status.get("url_healthy", True)
+        
+        # Send alert only if tunnel was previously healthy
+        if url_was_healthy:
+            alert_msg = f"⚠️ Fluidd tunnel health check failed at {datetime.now().strftime('%H:%M:%S')}.\n\nURL: {current_url}\n\nThe tunnel may be down or unreachable."
+            send_sms("Fluidd Health Alert", alert_msg)
+            print("📱 Alert SMS sent")
+        else:
+            print("ℹ️ Tunnel still down - no alert sent to avoid spam")
     
     # Update status
     status["last_health_check"] = datetime.now().isoformat()
@@ -241,23 +315,48 @@ def perform_health_check():
     return is_healthy
 
 def main():
+    parser = argparse.ArgumentParser(description='Fluidd Tunnel Health Monitor')
+    parser.add_argument('--status-report', action='store_true', 
+                       help='Send status report (used by scheduled task)')
+    parser.add_argument('--health-check', action='store_true',
+                       help='Perform silent health check only')
+    
+    args = parser.parse_args()
+    
     print("🔧 Fluidd Tunnel Health Monitor")
     print("=" * 40)
     
-    # Load current status
-    status = load_status()
+    if args.status_report:
+        print("📅 Sending scheduled status report...")
+        success = send_daily_status_report()
+        if success:
+            print("✅ Status report sent successfully!")
+        else:
+            print("❌ Failed to send status report")
+        return
     
-    # Check if daily report should be sent
-    if should_send_daily_report(status.get("last_report")):
-        print("📅 Time for daily status report...")
-        send_daily_status_report()
+    elif args.health_check:
+        print("🔍 Performing scheduled health check...")
+        is_healthy = perform_health_check()
+        print(f"Health status: {'✅ Healthy' if is_healthy else '❌ Unhealthy'}")
+        return
+    
     else:
-        print("📅 Daily report already sent or not time yet")
+        # Default behavior - legacy mode
+        print("ℹ️ Running in legacy mode...")
+        status = load_status()
         
-        # Perform regular health check
-        perform_health_check()
-    
-    print("\n✅ Health monitoring complete!")
+        # Check if daily report should be sent
+        if should_send_daily_report(status.get("last_report")):
+            print("📅 Time for daily status report...")
+            send_daily_status_report()
+        else:
+            print("📅 Daily report already sent or not time yet")
+            
+            # Perform regular health check
+            perform_health_check()
+        
+        print("\n✅ Health monitoring complete!")
 
 if __name__ == "__main__":
     main()

@@ -768,6 +768,46 @@
       "options": {
         "cwd": "${workspaceFolder}"
       }
+    },
+    {
+      "label": "service:send-sms-manual",
+      "type": "shell",
+      "command": "python",
+      "args": ["tools/service_manager.py", "send-sms"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Manually send SMS with current tunnel URL",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
+    },
+    {
+      "label": "service:force-status-report",
+      "type": "shell",
+      "command": "python",
+      "args": ["tools/service_manager.py", "force-status"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "detail": "Force immediate status report SMS",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      }
     }
   ],
   "inputs": [
