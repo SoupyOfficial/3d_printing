@@ -1,0 +1,33 @@
+{
+  "type": "printer",
+  "version": 1,
+  "metadata": {
+    "name": "Creality Ender-3 V3 KE 0.4 nozzle",
+    "brand": "Creality",
+    "model": "Ender-3 V3 KE",
+    "nozzle_diameter_mm": 0.4,
+    "created": "2025-09-29T15:18:11.118724Z",
+    "description": "PETG\u2011tuned defaults for Ender\u20113 V3 KE 0.4 nozzle."
+  },
+  "settings": {
+    "acceleration_enabled": true,
+    "acceleration_print": 3000,
+    "acceleration_travel": 4000,
+    "jerk_enabled": true,
+    "jerk_travel": 12,
+    "jerk_print": 10,
+    "travel_avoid_other_parts": true,
+    "travel_avoid_distance": 1.0,
+    "z_seam_type": "shortest",
+    "retraction_enable": true,
+    "retraction_amount": 1.1,
+    "retraction_speed": 38,
+    "retraction_min_travel": 0.8,
+    "retraction_combing": "infill",
+    "retraction_count_max": 25,
+    "retraction_hop_enabled": true,
+    "retraction_hop": 0.2,
+    "material_flow": 98,
+    "printer_model": "Creality Ender-3 V3 KE 0.4 nozzle"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "bundle_id": "Creality Ender-3 V3 KE 0.4 nozzle_20250929151811",
+  "bundle_type": "printer config bundle",
+  "filament_config": [
+    "filament/Overture PETG Ender-3 V3 KE 0.4mm.creality_filament"
+  ],
+  "printer_config": [
+    "printer/Creality Ender-3 V3 KE 0.4 nozzle.json"
+  ],
+  "printer_preset_name": "Creality Ender-3 V3 KE 0.4 nozzle",
+  "process_config": [
+    "process/0.20mm Standard @Creality Ender-3 V3 KE 0.4 nozzle.json",
+    "process/0.28mm Draft @Creality Ender-3 V3 KE 0.4 nozzle.json",
+    "process/0.12mm Fine @Creality Ender-3 V3 KE 0.4 nozzle.json"
+  ],
+  "version": ""
+}

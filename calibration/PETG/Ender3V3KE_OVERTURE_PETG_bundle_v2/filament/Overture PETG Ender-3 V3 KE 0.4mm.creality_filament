@@ -1,0 +1,31 @@
+{
+  "type": "filament",
+  "version": 1,
+  "metadata": {
+    "name": "OVERTURE PETG \u2013 Ender\u20113 V3 KE \u2013 0.4mm",
+    "brand": "OVERTURE",
+    "material": "PETG",
+    "created": "2025-09-29T15:18:11.118724Z",
+    "printer_model": "Creality Ender-3 V3 KE 0.4 nozzle",
+    "nozzle_diameter_mm": 0.4,
+    "description": "230\u2013250 \u00b0C nozzle, 80\u201390 \u00b0C bed. Tuned for KE Sprite DD."
+  },
+  "settings": {
+    "material_print_temperature": 240,
+    "material_print_temperature_layer_0": 245,
+    "material_standby_temperature": 175,
+    "material_bed_temperature": 85,
+    "material_bed_temperature_layer_0": 85,
+    "cool_fan_enabled": true,
+    "cool_fan_speed": 35,
+    "cool_fan_speed_min": 25,
+    "cool_fan_full_layer": 4,
+    "adhesion_type": "skirt",
+    "skirt_line_count": 3,
+    "initial_layer_line_width_factor": 120,
+    "wall_line_width": 0.4,
+    "infill_line_width": 0.4,
+    "top_bottom_line_width": 0.4,
+    "note": "Dry PETG at 55 \u00b0C for 4\u20136 h if popping/stringing. If stringing: fan 20\u201325% or +5 \u00b0C. If weak layers: fan ~20% and speed 35\u201340 mm/s."
+  }
+}

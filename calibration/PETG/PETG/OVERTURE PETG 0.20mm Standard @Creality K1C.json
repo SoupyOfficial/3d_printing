@@ -1,0 +1,8 @@
+﻿{
+    "from": "User",
+    "inherits": "0.20mm Standard @Creality K1C",
+    "is_custom_defined": "0",
+    "name": "OVERTURE PETG 0.20mm Standard @Creality K1C",
+    "print_settings_id": "OVERTURE PETG 0.20mm Standard @Creality K1C",
+    "version": "2.0.1.0"
+}

@@ -1,0 +1,8 @@
+﻿{
+    "from": "User",
+    "inherits": "0.20mm Standard @Elegoo Neptune4Max (0.4 nozzle)",
+    "is_custom_defined": "0",
+    "name": "OVERTURE PETG 0.20mm Standard @Elegoo Neptune4Max (0.4 nozzle)",
+    "print_settings_id": "OVERTURE PETG 0.20mm Standard @Elegoo Neptune4Max (0.4 nozzle)",
+    "version": "2.0.1.0"
+}

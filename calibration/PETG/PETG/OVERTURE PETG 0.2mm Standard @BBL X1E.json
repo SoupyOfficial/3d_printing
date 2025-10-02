@@ -1,0 +1,8 @@
+﻿{
+    "from": "User",
+    "inherits": "0.20mm Standard @BBL X1C",
+    "is_custom_defined": "0",
+    "name": "OVERTURE PETG 0.2mm Standard @BBL X1E",
+    "print_settings_id": "OVERTURE PETG 0.2mm Standard @BBL X1E",
+    "version": "1.9.0.14"
+}
