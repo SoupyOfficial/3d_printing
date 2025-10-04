@@ -1,0 +1,19 @@
+{
+    "base_id": "GP004",
+    "brim_type": "outer_only",
+    "brim_width": "10",
+    "enable_support": "1",
+    "from": "User",
+    "inherits": "0.20mm Standard @Creality Hi 0.4 nozzle",
+    "is_custom_defined": "0",
+    "name": "0.20mm Standard @Creality Hi 0.4 nozzle - Copy(1)",
+    "print_settings_id": "0.20mm Standard @Creality Hi 0.4 nozzle - Copy(1)",
+    "support_interface_spacing": "0.25",
+    "support_interface_top_layers": "3",
+    "support_on_build_plate_only": "1",
+    "support_threshold_angle": "40",
+    "tree_support_branch_diameter": "3",
+    "version": "25.9.13.15",
+    "wall_loops": "3",
+    "wall_sequence": "inner-outer-inner wall"
+}

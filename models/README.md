@@ -4,10 +4,10 @@ This directory is organized by file type, then by environment (test vs prod), an
 
 ## Top-level convention
 
-- model_files/(test|prod)/{category}/...  → STL/3MF/OBJ model files
+- model_files/(test|prod)/{category}/...   → STL/3MF/OBJ model files
 - gcode/(test|prod)/...                    → Printer-ready G-code
 - sources/(test|prod)/{tool}/...           → Source files (e.g., OpenSCAD)
-- archives/(test|prod)/...                 → ZIP and other downloadable bundles
+- archives/processed/...                   → ZIP and other downloadable bundles
 - media/(test|prod)/...                    → Videos, screenshots, etc.
 
 ## Notes
@@ -33,7 +33,7 @@ This directory is organized by file type, then by environment (test vs prod), an
   - Validated slice → gcode/prod/
   - Experimental → gcode/test/
 - Source files (e.g., .scad): sources/prod/{tool}/ (e.g., sources/prod/openscad/)
-- ZIP downloads and any non-model extras (images, licenses, readmes) should stay zipped in archives/prod/ (do not extract to repo)
+- ZIP downloads and any non-model extras (images, licenses, readmes) should stay zipped in archives/processed/ (do not extract to repo)
 - Media (videos/screenshots): media/prod/ (or media/test/)
 
 ## Naming guidelines

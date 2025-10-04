@@ -1,0 +1,23 @@
+{
+    "base_id": "GP004",
+    "brim_type": "outer_only",
+    "enable_support": "1",
+    "from": "User",
+    "gap_infill_speed": "50",
+    "inherits": "0.20mm Standard @Creality Ender-3 V3 KE 0.4 nozzle",
+    "initial_layer_print_height": "0.25",
+    "inner_wall_speed": "38",
+    "internal_solid_infill_speed": "50",
+    "ironing_type": "topmost",
+    "is_custom_defined": "0",
+    "name": "OVERTURE PETG",
+    "outer_wall_speed": "33",
+    "print_settings_id": "OVERTURE PETG",
+    "skirt_loops": "3",
+    "sparse_infill_speed": "55",
+    "support_base_pattern": "rectilinear-grid",
+    "support_remove_small_overhang": "0",
+    "support_type": "tree(auto)",
+    "top_surface_speed": "28",
+    "version": "2025.9.45.22"
+}

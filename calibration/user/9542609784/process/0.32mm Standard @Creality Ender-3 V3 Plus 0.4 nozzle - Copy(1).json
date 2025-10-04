@@ -1,0 +1,11 @@
+{
+    "base_id": "GP004",
+    "enable_support": "1",
+    "from": "User",
+    "inherits": "0.32mm Standard @Creality Ender-3 V3 Plus 0.4 nozzle",
+    "is_custom_defined": "0",
+    "name": "0.32mm Standard @Creality Ender-3 V3 Plus 0.4 nozzle - Copy(1)",
+    "print_settings_id": "0.32mm Standard @Creality Ender-3 V3 Plus 0.4 nozzle - Copy(1)",
+    "support_type": "tree(auto)",
+    "version": "25.9.13.15"
+}
