@@ -1,2 +1,2 @@
-https://classroom-authorities-earn-lace.trycloudflare.com
-Generated at: 2025-10-02 09:56:42
+https://api.trycloudflare.com
+Generated at: 2025-10-02 22:14:39
