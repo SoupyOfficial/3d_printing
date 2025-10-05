@@ -266,9 +266,25 @@ python tools/validate_profiles.py
 - **[Slicer CLI Guide](docs/slicer_cli_guide.md)** - Command-line workflows
 - **[Troubleshooting Guide](docs/extruder_clicking_troubleshooting.md)** - Problem solving
 
+## 🧹 Organize models automation
+
+To enforce the canonical models/ layout and process ZIP archives safely, use the PowerShell organizer:
+
+- Script: `tools/organize-models.ps1`
+- Docs: `docs/organize_models_script.md`
+
+Quick usage (Windows PowerShell):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\organize-models.ps1 -All -DryRun
+```
+
+Remove `-DryRun` to apply changes. If running from outside the repo, add `-Root "C:\path\to\3d_printing"`.
+
 ## 🎯 Next Steps
 
 ### Immediate Actions (First Use)
+
 1. **Install required tools** using the checklist above
 2. **Run `first_layer_test.gcode`** to verify bed leveling
 3. **Run `temp_tower_pla_195-220C.gcode`** to find optimal temperature
@@ -276,6 +292,7 @@ python tools/validate_profiles.py
 5. **Test complete workflow** with a bow tie print
 
 ### Future Enhancements
+
 - [ ] **Multi-material support**: Upgrade to MMU or dual extruder
 - [ ] **Advanced profiles**: PETG, TPU, wood-fill materials
 - [ ] **Custom models**: Adapt workspace for other two-color projects
