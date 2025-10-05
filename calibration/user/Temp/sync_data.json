@@ -528,8 +528,8 @@
         },
         {
             "curr_bed_type": "3",
-            "filament": "OV-PETG KE 0.4 nozzle",
-            "filament_colors": "#000000",
+            "filament": "Ender PLA Fast KE 0.4 nozzle",
+            "filament_colors": "#C0C0C0",
             "flush_volumes_matrix": "0.000000",
             "flush_volumes_vector": "140.000000|140.000000",
             "machine": "Creality Ender-3 V3 KE 0.4 nozzle",
@@ -599,6 +599,6 @@
     "name": "",
     "setting_id": "",
     "type": "",
-    "update_time": "1759607090",
+    "update_time": "1759687387",
     "version": ""
 }

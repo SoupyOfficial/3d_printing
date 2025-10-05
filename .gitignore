@@ -8,8 +8,8 @@ ehthumbs.db
 Thumbs.db
 
 # IDE/Editor files
-.vscode/settings.json
-.vscode/launch.json
+.vscode/
+.venv/
 *.swp
 *.swo
 *~
