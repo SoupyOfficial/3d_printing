@@ -519,6 +519,16 @@
         },
         {
             "curr_bed_type": "3",
+            "filament_01": "default",
+            "filament_02": "default",
+            "filament_colors": "#CAAD77,#FAEE58,#89634B",
+            "flush_volumes_matrix": "0.000000|333.000000|167.000000|193.000000|0.000000|232.000000|343.000000|494.000000|0.000000",
+            "flush_volumes_vector": "140.000000|140.000000|140.000000|140.000000|140.000000|140.000000",
+            "machine": "Bambu Lab P1S 0.4 nozzle(usb_reel_v3_small.3mf)",
+            "process": "0.20mm Standard @BBL X1C(usb_reel_v3_small.3mf)"
+        },
+        {
+            "curr_bed_type": "3",
             "filament": "Generic PLA @Creality Ender-3 V3 0.4 nozzle",
             "filament_colors": "#FFFFFF",
             "flush_volumes_matrix": "0.000000",
@@ -599,6 +609,6 @@
     "name": "",
     "setting_id": "",
     "type": "",
-    "update_time": "1759687387",
+    "update_time": "1759796629",
     "version": ""
 }
